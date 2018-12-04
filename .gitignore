@@ -1,0 +1,13 @@
+
+*.pyc
+
+experiments/*
+protobufs/*
+tensorboard/*
+weights/*
+
+.idea*
+
+train_config.py
+eval_config.py
+interactive_config.py
