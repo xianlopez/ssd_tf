@@ -4,8 +4,8 @@ import numpy as np
 import time
 import os
 
-# Now TrainConfiguration, EvaluateConfiguration and PredictConfiguration
-# are dynamically loaded rather directly loaded. Fot this purpose we use
+# Now TrainConfiguration, EvaluateConfiguration and InteractiveConfiguration
+# are dynamically loaded rather directly loaded. For this purpose we use
 # importlib package.
 import importlib
 

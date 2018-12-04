@@ -5,6 +5,7 @@ import socket
 import webbrowser
 import tools
 import os
+from interactive_config import UpdateInteractiveConfiguration
 
 
 def prepare_tensorboard(sess):
@@ -20,7 +21,7 @@ def prepare_tensorboard(sess):
     return merged, summary_writer, tensorboard_url
 
 
-args = UpdatePredictConfiguration()
+args = UpdateInteractiveConfiguration()
 
 net = TrainEnv.TrainEnv(args, 'interactive')
 

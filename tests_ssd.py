@@ -1,10 +1,9 @@
 import unittest
 from config.train_config import TrainConfiguration
-from models.detection import ssd
+import ssd
 from BoundingBoxes import BoundingBox, PredictedBox, boxes_are_equal
 import numpy as np
 import tensorflow as tf
-from losses import ssdloss
 
 class SSDTests(unittest.TestCase):
 

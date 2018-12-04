@@ -2,6 +2,7 @@ import TrainEnv
 import os
 import cv2
 import tools
+from interactive_config import UpdateInteractiveConfiguration
 
 
 def plot_results(predictions, filepaths, net):
@@ -17,7 +18,7 @@ def plot_results(predictions, filepaths, net):
         cv2.waitKey(0)
 
 
-args = PredictConfiguration()
+args = UpdateInteractiveConfiguration()
 
 net = TrainEnv.TrainEnv(args, 'interactive')
 

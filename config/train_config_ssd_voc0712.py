@@ -18,7 +18,6 @@ class UpdateTrainConfiguration(TrainConfiguration):
 
     ##################################
     ######### MODEL AND DATA #########
-    model_name = 'ssd'  # 'vgg16', 'resnet50', 'yolo'
     loss_name = 'ssdloss' # 'cross-entropy', 'yololoss'
     dataset_name = 'VOC0712'  # Any folder in the <<root_of_datasets>> directory.
     ##################################

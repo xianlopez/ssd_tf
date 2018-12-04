@@ -1,12 +1,12 @@
 import TrainEnv
-from predict_config import UpdatePredictConfiguration
+from interactive_config import UpdateInteractiveConfiguration
 import tensorflow as tf
 import os
 import sys
 import tools
 
 # Read configuration from predict_config:
-args = UpdatePredictConfiguration()
+args = UpdateInteractiveConfiguration()
 
 # Create network and start interactive session:
 net = TrainEnv.TrainEnv(args, 'interactive')
@@ -19,7 +19,7 @@ tf.train.write_graph(sess.graph_def, protobuf_dir, 'net_graph.pb', False)
 # Frozen graph:
 python_path = sys.executable
 input_graph = os.path.join(tools.get_base_dir(), 'protobufs', 'net_graph.pb')
-output_graph = os.path.join(tools.get_base_dir(), 'protobufs', 'frozen_' + args.model_name + '.pb')
+output_graph = os.path.join(tools.get_base_dir(), 'protobufs', 'frozen_ssd.pb')
 command = python_path + \
           r' -m tensorflow.python.tools.freeze_graph' + \
           r' --input_graph=' + input_graph + \
