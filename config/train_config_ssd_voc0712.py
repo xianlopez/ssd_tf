@@ -1,4 +1,4 @@
-from config.train_config import TrainConfiguration, PreprocessOpts
+from config.train_config_base import TrainConfiguration
 from DataAugmentation import DataAugOpts
 
 
@@ -32,19 +32,12 @@ class UpdateTrainConfiguration(TrainConfiguration):
     ##################################
 
 
-    ##################################
-    ########### PREPROCESS ###########
-    preprocess_opts = PreprocessOpts()
-    preprocess_opts.type = 'subtract_mean'
-    preprocess_opts.mean = 'vgg'
-    ##################################
 
 
     ##################################
     ####### DATA AUGMENTATION ########
     data_aug_opts = DataAugOpts()
     data_aug_opts.apply_data_augmentation = True
-    data_aug_opts.ssd_original_pipeline = True
     data_aug_opts.brightness_prob = 0.5
     data_aug_opts.brightness_delta_lower = -32
     data_aug_opts.brightness_delta_uper = 32

@@ -1,6 +1,6 @@
-import os
-import tools
-from config.train_config import TrainConfiguration, PreprocessOpts, DataAugOpts, YoloConfig, SSDConfig
+from ssd import SSDConfig
+from DataAugmentation import DataAugOpts
+from config.train_config_base import TrainConfiguration
 
 
 class UpdateTrainConfiguration(TrainConfiguration):
@@ -30,13 +30,6 @@ class UpdateTrainConfiguration(TrainConfiguration):
     modified_scopes = ['conv6', 'conv7', 'block8', 'block9', 'block10', 'block11', 'conv_loc', 'conv_cls', 'scale']
     ##################################
 
-
-    ##################################
-    ########### PREPROCESS ###########
-    preprocess_opts = PreprocessOpts()
-    preprocess_opts.type = 'subtract_mean'
-    preprocess_opts.mean = 'vgg'
-    ##################################
 
     ssd_config = SSDConfig()
     ssd_config.feat_layers_names = ['block7', 'block8', 'block9', 'block10', 'block11']

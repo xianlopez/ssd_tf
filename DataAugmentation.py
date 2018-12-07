@@ -21,6 +21,7 @@ class DataAugOpts:
     hue_prob = 0.5
     hue_delta_lower = -0.1
     hue_delta_upper = 0.1
+    write_image_after_data_augmentation = False
 ##################################
 
 
@@ -28,14 +29,13 @@ class DetectionDataAugmentation:
     def __init__(self, args):
         self.data_aug_opts = args.data_aug_opts
         self.outdir = args.outdir
-        self.write_image_after_data_augmentation = args.write_image_after_data_augmentation
         if args.num_workers > 1 and args.write_image_after_data_augmentation:
             raise Exception('Option write_image_after_data_augmentation is not compatible with more than one worker to load data.')
 
     def data_augmenter(self, image, bboxes, filename):
         image, bboxes = self.ssd_original_pipeline(image, bboxes)
         # Write images (for verification):
-        if self.write_image_after_data_augmentation:
+        if self.data_aug_opts.write_image_after_data_augmentation:
             image = tf.py_func(self.write_image, [image, bboxes, filename], tf.float32)
             image.set_shape((None, None, 3))
         return image, bboxes, filename

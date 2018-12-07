@@ -14,6 +14,13 @@ import ssd
 from L2Regularization import L2RegularizationLoss
 import math
 import DataReader
+import re
+
+
+class Checkpoint:
+    def __init__(self, path, val_loss):
+        self.path = path
+        self.val_loss = val_loss
 
 
 # ======================================================================================================================
@@ -168,11 +175,11 @@ class TrainEnv:
             self.initialize(sess, args)
             # Lists for the training history:
             train_metrics = []
-            train_loss = []
+            train_losses = []
             val_metrics = []
-            val_loss = []
-
+            val_losses = []
             best_val_metric = 0
+            checkpoints = [] # This is a list of Checkpoint objects.
 
             # Tensorboard:
             merged, summary_writer, tensorboard_url = self.prepare_tensorboard(sess, args)
@@ -234,44 +241,47 @@ class TrainEnv:
 
                 # Compute loss and metrics on training data:
                 if epoch % args.nepochs_checktrain == 0:
-
                     if args.recompute_train:
-
-                        loss, metrics, _, _, _ = self.evaluate_on_dataset('train', sess, args)
-                        train_loss.append(loss)
+                        train_loss, metrics, _, _, _ = self.evaluate_on_dataset('train', sess, args)
+                        train_losses.append(train_loss)
                         train_metrics.append(metrics)
-                        logging.info('Train loss: %.2e' % loss)
+                        logging.info('Train loss: %.2e' % train_loss)
                         logging.info('Train mAP: %.2f' % metrics)
-
                     else:
-                        loss = loss_acum / nbatches_train
-                        train_loss.append(loss)
-                        logging.info('Mean train loss during epoch: %.2e' % loss)
+                        train_loss = loss_acum / nbatches_train
+                        train_losses.append(train_loss)
+                        logging.info('Mean train loss during epoch: %.2e' % train_loss)
                         metrics = mean_ap.compute_mAP(all_predictions, all_labels, self.classnames, args)
                         train_metrics.append(metrics)
                         logging.info('Mean train mAP during epoch: %.2f' % metrics)
+                else:
+                    train_loss = None
 
                 # Compute loss and metrics on validation data:
                 if epoch % args.nepochs_checkval == 0:
-                    loss, metrics, _, _, _ = self.evaluate_on_dataset('val', sess, args)
-                    val_loss.append(loss)
+                    val_loss, metrics, _, _, _ = self.evaluate_on_dataset('val', sess, args)
+                    val_losses.append(val_loss)
                     val_metrics.append(metrics)
-                    logging.info('Val loss: %.2e' % loss)
+                    logging.info('Val loss: %.2e' % val_loss)
                     logging.info('Val mAP: %.2f' % metrics)
+                else:
+                    val_loss = None
 
                 # Plot training progress:
                 if epoch % args.nepochs_checktrain == 0 or epoch % args.nepochs_checkval == 0:
-                    tools.plot_training_history(train_metrics, train_loss, val_metrics, val_loss, args, epoch)
+                    tools.plot_training_history(train_metrics, train_losses, val_metrics, val_losses, args, epoch)
 
                 # Save the model:
                 if epoch % args.nepochs_save == 0:
-                    save_path = self.saver.save(sess, tools.join_paths(args.outdir, 'model'), global_step=epoch)
-                    logging.info('Model saved to ' + save_path)
+                    # save_path = self.saver.save(sess, tools.join_paths(args.outdir, 'model'), global_step=epoch)
+                    # logging.info('Model saved to ' + save_path)
+                    self.save_checkpoint(sess, val_loss, epoch, checkpoints, args.outdir)
 
             # Save the model (if we haven't done it yet):
             if args.num_epochs % args.nepochs_save != 0:
-                save_path = self.saver.save(sess, tools.join_paths(args.outdir, 'model'), global_step=args.num_epochs)
-                logging.info('Model saved to ' + save_path)
+                # save_path = self.saver.save(sess, tools.join_paths(args.outdir, 'model'), global_step=args.num_epochs)
+                # logging.info('Model saved to ' + save_path)
+                self.save_checkpoint(sess, val_loss, epoch, checkpoints, args.outdir)
 
             best_val_metric = np.max(np.array(val_metrics, dtype=np.float32))
             print('Best validation metric: ' + str(best_val_metric))
@@ -279,6 +289,58 @@ class TrainEnv:
         self.end_tensorboard()
 
         return best_val_metric
+
+    def save_checkpoint(self, sess, validation_loss, epoch, checkpoints, outdir):
+        if validation_loss is None:
+            validation_loss = -1
+        # Save new model:
+        save_path = self.saver.save(sess, tools.join_paths(outdir, 'model'), global_step=epoch)
+        logging.info('Model saved to ' + save_path)
+        new_checkpoint = Checkpoint(save_path, validation_loss)
+
+        # Get the best loss among all the checkpoints (including the new one):
+        best_loss = validation_loss
+        for ckpt in checkpoints:
+            best_loss = min(best_loss, ckpt.val_loss)
+
+        if len(checkpoints) > 0:
+            # Remove all the previous checkpoints but the best one.
+            checkpoints.sort(key=operator.attrgetter('val_loss'), reverse=True)
+            for i in range(len(checkpoints) - 2, -1, -1):
+                # Remove:
+                ckpt = checkpoints[i]
+                folder, name = os.path.split(ckpt.path)
+                for file in os.listdir(folder):
+                    if re.search(name, file) is not None:
+                        file_path = os.path.join(folder, file)
+                        try:
+                            os.remove(file_path)
+                        except Exception as ex:
+                            logging.warning('Error deleting file ' + file_path, exc_info=ex)
+                checkpoints.pop(i)
+                logging.info('Deleted checkpoint. Path: ' + ckpt.path + '  -  Val loss: ' + str(ckpt.val_loss))
+            # If the remeaining checkpoint is worse than the new checkpoint, remove it too.
+            ckpt = checkpoints[0]
+            if ckpt.val_loss >= validation_loss:
+                # Remove:
+                folder, name = os.path.split(ckpt.path)
+                for file in os.listdir(folder):
+                    if re.search(name, file) is not None:
+                        file_path = os.path.join(folder, file)
+                        try:
+                            os.remove(file_path)
+                        except Exception as ex:
+                            logging.warning('Error deleting file ' + file_path, exc_info=ex)
+                checkpoints.pop(0)
+                logging.info('Deleted checkpoint. Path: ' + ckpt.path + '  -  Val loss: ' + str(ckpt.val_loss))
+
+        # Append the new checkpoint to the list:
+        checkpoints.append(new_checkpoint)
+
+        logging.info('Remaining checkpoints:')
+        for ckpt in checkpoints:
+            logging.info('Path: ' + ckpt.path + '  -  Val loss: ' + str(ckpt.val_loss))
+        return checkpoints
 
     # ------------------------------------------------------------------------------------------------------------------
     def get_learning_rate_at_epoch(self, args, epoch):
@@ -355,14 +417,14 @@ class TrainEnv:
 
             print('')
             logging.debug('Variables to restore:')
-            for var in self.model_variables:
-
+            candidate_vars_to_restore = self.model_variables
+            if args.restore_optimizer:
+                candidate_vars_to_restore.extend([var.name for var in self.optimizer_variables])
+            for var in candidate_vars_to_restore:
                 is_modified = False
-
                 for modscope in args.modified_scopes:
                     if modscope in var:
                         is_modified = True
-
                 if not is_modified:
                     varnames_to_restore.append(var)
                     logging.debug(var)
@@ -411,6 +473,8 @@ class TrainEnv:
         self.lr_to_update = tf.placeholder(dtype=tf.float32, shape=(), name='lr_to_update')
         self.update_lr_op = tf.assign(self.learning_rate, self.lr_to_update, name='UpdateLR')
 
+        previous_variables = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)
+
         # Decide what optimizer to use:
         if args.optimizer_name == 'sgd':
             optimizer = tf.train.GradientDescentOptimizer(self.learning_rate)
@@ -434,6 +498,12 @@ class TrainEnv:
 
         else:
             self.train_op = optimizer.minimize(self.loss, var_list=vars_to_train, name='train_op')
+
+        posterior_variables = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)
+        self.optimizer_variables = []
+        for var in posterior_variables:
+            if var not in previous_variables:
+                self.optimizer_variables.append(var)
 
         return
 

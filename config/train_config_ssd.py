@@ -1,6 +1,6 @@
 import os
 import tools
-from config.train_config import TrainConfiguration, PreprocessOpts, YoloConfig, SSDConfig
+from config.train_config_base import TrainConfiguration
 from DataAugmentation import DataAugOpts
 
 
@@ -32,12 +32,6 @@ class UpdateTrainConfiguration(TrainConfiguration):
     ##################################
 
 
-    ##################################
-    ########### PREPROCESS ###########
-    preprocess_opts = PreprocessOpts()
-    preprocess_opts.type = 'subtract_mean'
-    preprocess_opts.mean = 'vgg'
-    ##################################
 
 
     data_aug_opts = DataAugOpts()
