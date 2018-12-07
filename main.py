@@ -67,7 +67,7 @@ def import_config_files(inline_args):
                   ' class not defined.')
         else:
             print(configModuleName + ' configuration file NOT found, or ' + class2load + ' class not defined.')
-        raise Exception()
+        raise
 
     return currentConfiguration
 

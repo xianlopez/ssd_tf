@@ -1,6 +1,7 @@
 from ssd import SSDConfig
 from mean_ap import MeanAPOpts
 from DataAugmentation import DataAugOpts
+from LRScheduler import LRPolicies, LRSchedulerOpts
 
 
 ########### ALL CONFIG ###########
@@ -27,6 +28,7 @@ class TrainConfiguration:
 
     dataset_name = ''  # Any folder in the <<root_of_datasets>> directory.
 
+    lr_scheduler_opts = LRSchedulerOpts(LRPolicies.onCommand)
 
     ##################################
     ######### INITIALIZATION #########

@@ -15,6 +15,7 @@ from L2Regularization import L2RegularizationLoss
 import math
 import DataReader
 import re
+from LRScheduler import LRScheduler
 
 
 class Checkpoint:
@@ -167,6 +168,7 @@ class TrainEnv:
         print('')
         logging.info("Start training")
         nbatches_train = self.reader.get_nbatches_per_epoch('train')
+        lr_scheduler = LRScheduler(args.lr_scheduler_opts, args.outdir)
         metrics = None
         with tf.Session(config=tools.get_config_proto(args.gpu_memory_fraction)) as sess:
 
@@ -185,12 +187,13 @@ class TrainEnv:
             merged, summary_writer, tensorboard_url = self.prepare_tensorboard(sess, args)
 
             # Loop on epochs:
+            current_lr = args.learning_rate
             global_step = 0
             for epoch in range(1, args.num_epochs + 1):
                 print('')
                 logging.info('Starting epoch %d / %d' % (epoch, args.num_epochs))
                 sess.run(self.reader.get_init_op('train'))
-                current_lr = self.get_learning_rate_at_epoch(args, epoch)
+                current_lr = lr_scheduler.GetLearningRateAtEpoch(epoch, current_lr)
                 _ = sess.run([self.update_lr_op], feed_dict={self.lr_to_update: current_lr})
                 learning_rate = sess.run([self.learning_rate])[0]
                 logging.info('Learning rate: ' + str(learning_rate))
@@ -341,24 +344,6 @@ class TrainEnv:
         for ckpt in checkpoints:
             logging.info('Path: ' + ckpt.path + '  -  Val loss: ' + str(ckpt.val_loss))
         return checkpoints
-
-    # ------------------------------------------------------------------------------------------------------------------
-    def get_learning_rate_at_epoch(self, args, epoch):
-        if len(args.lr_schedule) > 0:
-            change_epochs = list(args.lr_schedule.keys())
-            change_epochs.sort()
-            if epoch < change_epochs[0]:
-                new_lr = args.learning_rate
-            else:
-                new_lr = None
-                for i in range(len(change_epochs) - 1):
-                    if change_epochs[i] <= epoch < change_epochs[i+1]:
-                        new_lr = args.lr_schedule[change_epochs[i]]
-                if new_lr is None:
-                    new_lr = args.lr_schedule[change_epochs[len(change_epochs) - 1]]
-        else:
-            new_lr = args.learning_rate
-        return new_lr
 
     # ------------------------------------------------------------------------------------------------------------------
     def generate_graph(self, args):
