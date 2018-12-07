@@ -2,53 +2,6 @@ import tensorflow as tf
 import cv2
 import numpy as np
 
-
-class ResizerSimple:
-    def __init__(self, input_width, input_height):
-        self.input_width = input_width
-        self.input_height = input_height
-
-    def get_resize_func(self, resize_method):
-        if resize_method == 'resize_warp':
-            return self.resize_warp
-        elif resize_method == 'resize_pad_zeros':
-            return self.resize_pad_zeros
-        elif resize_method == 'resize_lose_part':
-            return self.resize_lose_part
-        elif resize_method == 'centered_crop':
-            return self.centered_crop
-        else:
-            raise Exception('Resize method not recognized.')
-
-    def resize_warp(self, image):
-        image = tf.image.resize_images(image, [self.input_height, self.input_width])
-        return image
-
-    def resize_pad_zeros(self, image):
-        height, width = tf.shape(image)[0], tf.shape(image)[1]
-        scale_height = self.input_height / tf.to_float(height)
-        scale_width = self.input_width / tf.to_float(width)
-        scale = tf.minimum(scale_height, scale_width)
-        size = tf.cast(tf.stack([scale*tf.to_float(height), scale*tf.to_float(width)]), tf.int32)
-        image = tf.image.resize_images(image, size)
-        image = tf.image.resize_image_with_crop_or_pad(image, self.input_height, self.input_width)
-        return image
-
-    def resize_lose_part(self, image):
-        height, width = tf.shape(image)[0], tf.shape(image)[1]
-        scale_height = self.input_height / tf.to_float(height)
-        scale_width = self.input_width / tf.to_float(width)
-        scale = tf.maximum(scale_height, scale_width)
-        size = tf.cast(tf.stack([scale*tf.to_float(height), scale*tf.to_float(width)]), tf.int32)
-        image = tf.image.resize_images(image, size)
-        image = tf.image.resize_image_with_crop_or_pad(image, self.input_height, self.input_width)
-        return image
-
-    def centered_crop(self, image):
-        image = tf.image.resize_image_with_crop_or_pad(image, self.input_height, self.input_width)
-        return image
-
-
 class ResizerWithLabels:
     def __init__(self, input_width, input_height):
         self.input_width = input_width
@@ -59,54 +12,19 @@ class ResizerWithLabels:
             return self.resize_warp
         elif resize_method == 'resize_pad_zeros':
             return self.resize_pad_zeros
-        elif resize_method == 'resize_lose_part':
-            raise Exception('Not implemented yet.')
-        elif resize_method == 'centered_crop':
-            raise Exception('Not implemented yet.')
         else:
             raise Exception('Resize method not recognized.')
 
     def resize_warp(self, image, label):
-        # print('resize_warp')
         # The bounding boxes are in relative coordinates, so they don't need to be changed.
-        # image = tf.image.resize_images(image, [self.input_height, self.input_width])
-        # label = tf.Print(label, [label[label.shape[0] - 1, 1]], 'label')
-        # label = tf.Print(label, [label[tf.shape(label)[0] - 1, 1]], 'label')
-        image = tf.py_func(self.pyfunc_resize, [image, label], (tf.float32))
+        image = tf.py_func(self.pyfunc_resize, [image], (tf.float32))
         image.set_shape((self.input_height, self.input_width, 3))
-
-
-        # print(image.dtype)
-        # print(image.shape)
         return image, label
 
-    def pyfunc_resize(self, image, label):
-        # print('pyfunc_resize')
-        # print(label)
+    def pyfunc_resize(self, image):
         image = image.astype(np.uint8)
-        # print(image.__class__.__name__)
-        # print(image.dtype)
-        # print(image.shape)
-        # print(image[9, 0, 0], image[10, 0, 0], image[11, 0, 0])
-        # print(image[9, 1, 0], image[10, 1, 0], image[11, 1, 0])
-        # print(image[9, 0, 1], image[10, 0, 1], image[11, 0, 1])
-        # print(image[9, 1, 1], image[10, 1, 1], image[11, 1, 1])
-        # print(image[9, 0, 2], image[10, 0, 2], image[11, 0, 2])
-        # print(image[9, 1, 2], image[10, 1, 2], image[11, 1, 2])
         image = cv2.resize(image, (self.input_height, self.input_width), interpolation=1)
-        # image = np.round(image)
         image = image.astype(np.float32)
-        # print('after reshape')
-        # print(image.__class__.__name__)
-        # print(image.dtype)
-        # print(image.shape)
-        # print(image[9, 0, 0], image[10, 0, 0], image[11, 0, 0])
-        # print(image[9, 1, 0], image[10, 1, 0], image[11, 1, 0])
-        # print(image[9, 0, 1], image[10, 0, 1], image[11, 0, 1])
-        # print(image[9, 1, 1], image[10, 1, 1], image[11, 1, 1])
-        # print(image[9, 0, 2], image[10, 0, 2], image[11, 0, 2])
-        # print(image[9, 1, 2], image[10, 1, 2], image[11, 1, 2])
-        # print('pyfunc_resize listo')
         return image
 
     def resize_pad_zeros(self, image, bboxes):

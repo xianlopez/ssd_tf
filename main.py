@@ -27,7 +27,7 @@ def main(inline_args):
         elif inline_args.run == 'evaluate':
             result = evaluate(args)
         else:
-            raise Exception('Please, select specify a valid execution mode: train / evaluate')
+            raise Exception('Please, specify a valid execution mode: train / evaluate')
 
         fin_time = time.time()
         print('')
@@ -50,7 +50,7 @@ def import_config_files(inline_args):
         configModuleName = 'eval_config'
         class2load = "UpdateEvaluateConfiguration"
     else:
-        print('Please, select specify a valid execution mode: train / evaluate')
+        print('Please, specify a valid execution mode: train / evaluate')
         raise Exception()
 
     if inline_args.conf is not None:

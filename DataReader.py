@@ -5,11 +5,14 @@ import logging
 import os
 import cv2
 import numpy as np
-import Preprocessor
 import sys
 import DataAugmentation
 import Resizer
 from BoundingBoxes import BoundingBox
+
+
+# VGG_MEAN = [123.68, 116.78, 103.94]
+VGG_MEAN = [123.0, 117.0, 104.0]
 
 
 def get_n_classes(args):
@@ -84,7 +87,6 @@ class TrainDataReader:
         self.input_height = input_shape[1]
         self.num_workers = args.num_workers
         self.buffer_size = args.buffer_size
-        self.preprocess_function = Preprocessor.Preprocessor(args.preprocess_opts, self.input_width, self.input_height).get_preprocess_function()
 
         self.resize_function = Resizer.ResizerWithLabels(self.input_width, self.input_height).get_resize_func(args.resize_method)
 
@@ -113,7 +115,7 @@ class TrainDataReader:
         self.data_aug_opts = args.data_aug_opts
 
         if self.data_aug_opts.apply_data_augmentation:
-            data_augmenter = DataAugmentation.DetectionDataAugmentation(args, self.input_width, self.input_height, self.nclasses)
+            data_augmenter = DataAugmentation.DetectionDataAugmentation(args)
             self.data_aug_func = data_augmenter.data_augmenter
         return
 
@@ -255,7 +257,8 @@ class TrainDataReader:
 
     # ------------------------------------------------------------------------------------------------------------------
     def preprocess_w_all(self, image, label, filename):
-        image = self.preprocess_function(image)
+        means = tf.reshape(tf.constant(VGG_MEAN), [1, 1, 3])
+        image = image - means
         return image, label, filename
 
 

@@ -43,19 +43,6 @@ class BoundingBox:
         self.width = self.width / float(img_width)
         self.height = self.height / float(img_height)
 
-    # def convert_to_absolute(self, img_width, img_height):
-    #     if not self.is_relative():
-    #         raise Exception('Error converting to absolute: image is already absolute.')
-    #     self.xmin = int(np.round(self.xmin * img_width))
-    #     self.ymin = int(np.round(self.ymin * img_height))
-    #     self.width = int(np.round(self.width * img_width))
-    #     self.height = int(np.round(self.height * img_height))
-    #     # Make sure it fits inside the image:
-    #     self.xmin = min(max(self.xmin, 0), img_width - 1)
-    #     self.ymin = min(max(self.ymin, 0), img_height - 1)
-    #     self.width = min(max(self.width, 1), img_width - self.xmin)
-    #     self.height = min(max(self.height, 1), img_height - self.ymin)
-
     def get_abs_coords(self, img_width, img_height):
         # if not self.is_relative():
         #     self.print()
