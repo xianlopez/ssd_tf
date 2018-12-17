@@ -451,9 +451,6 @@ class TrainEnv:
         for v in vars_to_train:
             logging.debug(v.name)
 
-        if self.nbatches_accum > 0:
-            args.learning_rate = args.learning_rate / self.nbatches_accum
-
         self.learning_rate = tf.Variable(initial_value=args.learning_rate, dtype=tf.float32, name='learning_rate')
         self.lr_to_update = tf.placeholder(dtype=tf.float32, shape=(), name='lr_to_update')
         self.update_lr_op = tf.assign(self.learning_rate, self.lr_to_update, name='UpdateLR')
@@ -478,7 +475,7 @@ class TrainEnv:
                 accum_grads = [tf.Variable(tf.zeros_like(tv.initialized_value(), name='zeros_tv'), trainable=False, name='accum_grads') for tv in vars_to_train]
                 self.zero_ops = [ag.assign(tf.zeros_like(ag, name='zeros_ag'), name='zero_ops_assign') for ag in accum_grads]
                 gvs = optimizer.compute_gradients(self.loss, vars_to_train)
-                self.accum_ops = [accum_grads[i].assign_add(gv[0], name='assign_add_gv') for i, gv in enumerate(gvs)]
+                self.accum_ops = [accum_grads[i].assign_add(gv[0] / float(self.nbatches_accum), name='assign_add_gv') for i, gv in enumerate(gvs)]
                 self.train_step = optimizer.apply_gradients([(accum_grads[i], gv[1]) for i, gv in enumerate(gvs)], name='ntrain_step')
 
         else:
@@ -508,7 +505,8 @@ class TrainEnv:
     def prepare_tensorboard(self, sess, args):
         merged = tf.summary.merge_all(name='summary_merge_all')
         summary_writer = tf.summary.FileWriter(os.path.join(args.outdir, 'tensorboard'), sess.graph)
-        command = 'python /home/xian/venvs/ssd_tf/lib/python3.5/site-packages/tensorboard/main.py --logdir=' + os.path.join(args.outdir, 'tensorboard')
+        # command = 'python /home/xian/venvs/ssd_tf/lib/python3.5/site-packages/tensorboard/main.py --logdir=' + os.path.join(args.outdir, 'tensorboard')
+        command = 'tensorboard --logdir=' + os.path.join(args.outdir, 'tensorboard')
         self.tensorboard_process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
         hostname = socket.gethostname()
         tensorboard_url = 'http://' + hostname + ':6006'
