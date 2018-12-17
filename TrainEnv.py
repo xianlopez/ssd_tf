@@ -286,8 +286,9 @@ class TrainEnv:
                 # logging.info('Model saved to ' + save_path)
                 self.save_checkpoint(sess, val_loss, epoch, checkpoints, args.outdir)
 
-            best_val_metric = np.max(np.array(val_metrics, dtype=np.float32))
-            print('Best validation metric: ' + str(best_val_metric))
+            if len(val_metrics) > 0:
+                best_val_metric = np.max(np.array(val_metrics, dtype=np.float32))
+                print('Best validation metric: ' + str(best_val_metric))
 
         self.end_tensorboard()
 

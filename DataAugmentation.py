@@ -29,7 +29,7 @@ class DetectionDataAugmentation:
     def __init__(self, args):
         self.data_aug_opts = args.data_aug_opts
         self.outdir = args.outdir
-        if args.num_workers > 1 and args.write_image_after_data_augmentation:
+        if args.num_workers > 1 and self.data_aug_opts.write_image_after_data_augmentation:
             raise Exception('Option write_image_after_data_augmentation is not compatible with more than one worker to load data.')
 
     def data_augmenter(self, image, bboxes, filename):
