@@ -1,6 +1,7 @@
 from config.train_config_base import TrainConfiguration
 from DataAugmentation import DataAugOpts
 from LRScheduler import LRPolicies, LRSchedulerOpts
+import os
 
 
 class UpdateTrainConfiguration(TrainConfiguration):
@@ -23,10 +24,8 @@ class UpdateTrainConfiguration(TrainConfiguration):
     ##################################
     ######### INITIALIZATION #########
     initialization_mode = 'load-pretrained'  # 'load-pretrained', 'scratch'
-    weights_file = r'.\weights\vgg_16_for_ssd\vgg_16_for_ssd.ckpt'
+    weights_file = os.path.join('.', 'weights', 'vgg_16_for_ssd', 'vgg_16_for_ssd.ckpt')
     modified_scopes = ['conv6', 'conv7', 'conv8', 'conv9', 'scale', 'mbox']
-    # weights_file = r'C:\development\brainlab\experiments\2019\2019_01_07_46\model-1'
-    # modified_scopes = []
     restore_optimizer = False
     ##################################
 
@@ -44,7 +43,7 @@ class UpdateTrainConfiguration(TrainConfiguration):
     resize_method = 'resize_warp'  # 'resize_warp', 'resize_pad_zeros', 'resize_lose_part', 'centered_crop'
     ##################################
 
-    percent_of_data = 50
+    percent_of_data = 100
     # shuffle_data = False
     # random_seed = 1
     nepochs_save = 50
@@ -54,3 +53,7 @@ class UpdateTrainConfiguration(TrainConfiguration):
     nonmaxsup = False
     buffer_size = 500
     num_workers = 8
+    # root_of_datasets = '/home/xian/datasets'
+
+
+

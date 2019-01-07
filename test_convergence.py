@@ -1,6 +1,5 @@
 import tensorflow as tf
 from main import main
-import numpy as np
 
 max_experiments = 50
 
