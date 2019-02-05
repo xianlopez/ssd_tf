@@ -39,14 +39,21 @@ def plot_pr_curve(recall, precision_rect, recall_interp, precision_interp, thres
 
 
 def precision_recall_curve(predictions_matches, n_objects):
+    # logging.debug('Computing precision-recall curve...')
+    ini = time.time()
     predictions_matches.sort(key=operator.attrgetter('confidence'), reverse=True)
-    precision_vec = []
-    recall_vec = []
-    threshold_vec = []
+    n_points = len(predictions_matches)
+    precision_vec = np.zeros(shape=(n_points), dtype=np.float32)
+    recall_vec = np.zeros(shape=(n_points), dtype=np.float32)
+    threshold_vec = np.zeros(shape=(n_points), dtype=np.float32)
     FP = 0
     TP = 0
     n_predictions = 0
-    for prediction in predictions_matches:
+    # count = 0
+    for i in range(n_points):
+        prediction = predictions_matches[i]
+        # count += 1
+        # print(str(count) + '/' + str(n_points))
         n_predictions += 1
         if prediction.matches_gt_box:
             TP += 1
@@ -58,39 +65,69 @@ def precision_recall_curve(predictions_matches, n_objects):
             recall = 0
         else:
             recall = TP / n_objects
-        precision_vec.append(precision)
-        recall_vec.append(recall)
-        threshold_vec.append(prediction.confidence)
+        precision_vec[i] = precision
+        recall_vec[i] = recall
+        threshold_vec[i] = prediction.confidence
+    lapse = time.time() - ini
+    # logging.debug('Precision-recall curve done in ' + str(lapse) + ' s.')
     return threshold_vec, recall_vec, precision_vec
 
 
 # Rectified precision.
 # At a given point, this is the maximum precision at that point and all with a higher recall.
+# def rectify_precision(precision):
+#     logging.debug('Rectifying precision...')
+#     ini = time.time()
+#     precision_rect = []
+#     npoints = len(precision)
+#     for i in range(npoints):
+#         max_prec = precision[i]
+#         for j in range(i, npoints):
+#             max_prec = max(max_prec, precision[j])
+#         precision_rect.append(max_prec)
+#     lapse = time.time() - ini
+#     logging.debug('Precision rectified in ' + str(lapse) + ' s.')
+#     return precision_rect
+
+
+# Rectified precision.
+# At a given point, this is the maximum precision at that point and all with a higher recall.
 def rectify_precision(precision):
-    precision_rect = []
+    # logging.debug('Rectifying precision...')
+    ini = time.time()
+    precision_rect = np.zeros_like(precision)
     npoints = len(precision)
-    for i in range(npoints):
-        max_prec = precision[i]
-        for j in range(i, npoints):
-            max_prec = max(max_prec, precision[j])
-        precision_rect.append(max_prec)
+    max_precision = 0
+    for i in range(npoints - 1, -1, -1):
+        this_precision = precision[i]
+        if this_precision > max_precision:
+            max_precision = this_precision
+        precision_rect[i] = max_precision
+    lapse = time.time() - ini
+    # logging.debug('Precision rectified in ' + str(lapse) + ' s.')
     return precision_rect
 
 
 # Interpolate precision-recall curve:
 def interpolate_pr_curve(precision, recall, mean_ap_opts):
+    # logging.debug('Interpolating PR curve...')
+    ini = time.time()
     if np.max(recall) < 1 - mean_ap_opts.epsilon:
-        recall.append(np.max(recall) + mean_ap_opts.epsilon)
-        precision.append(0)
+        # recall.append(np.max(recall) + mean_ap_opts.epsilon)
+        # precision.append(0)
+        recall = np.concatenate([recall, np.array([np.max(recall) + mean_ap_opts.epsilon])], axis=0)
+        precision = np.concatenate([precision, np.array([0])], axis=0)
     recall_interp = np.linspace(0, 1, mean_ap_opts.npoints_interp)
     precision_interp = np.interp(recall_interp, recall, precision)
+    lapse = time.time() - ini
+    # logging.debug('PR curve interpolated in ' + str(lapse) + ' s.')
     return recall_interp, precision_interp
 
 
 def compute_mAP(predictions, labels, classnames, args):
     # predictions (nimages) List with the predicted bounding boxes of each image.
     # labels (nimages) List with the ground truth boxes of each image.
-    logging.debug('Computing mean average precision')
+    logging.debug('Computing mean average precision...')
     initime = time.time()
 
     nclasses = len(classnames)
@@ -103,7 +140,10 @@ def compute_mAP(predictions, labels, classnames, args):
     nobj_allclasses = np.zeros(shape=(nclasses), dtype=np.int32)
 
     # Compute correspondences between predictions and ground truth for every image.
+    # logging.debug('Computing correspondences...')
+    ini = time.time()
     for i in range(nimages):
+        # print(str(i) + '/' + str(nimages))
         predboxes_img = predictions[i]
         gtlist_img = labels[i]
         for cl in range(nclasses):
@@ -138,6 +178,8 @@ def compute_mAP(predictions, labels, classnames, args):
                     predictions_matches[cl].append(PredictionMatch(predboxes_img_class[k].confidence, True))
                 else:
                     predictions_matches[cl].append(PredictionMatch(predboxes_img_class[k].confidence, False))
+    lapse = time.time() - ini
+    # logging.debug('Correspondences ready (done in ' + str(lapse) + ' s).')
 
     # Compute precision and recall curves for every class:
     precision_allclasses = []
