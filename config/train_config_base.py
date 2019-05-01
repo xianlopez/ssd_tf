@@ -2,6 +2,8 @@ from ssd import SSDConfig
 from mean_ap import MeanAPOpts
 from DataAugmentation import DataAugOpts
 from LRScheduler import LRPolicies, LRSchedulerOpts
+import tools
+import os
 
 
 ########### ALL CONFIG ###########
@@ -96,8 +98,8 @@ class TrainConfiguration:
     ########### OTHER OPTS ###########
     percent_of_data = 100  # For debbuging. Percentage of data to use. Put 100 if not debbuging
     num_workers = 8  # Number of parallel processes to read the data.
-    root_of_datasets = r'D:\datasets'
-    experiments_folder = r'.\experiments'
+    root_of_datasets = os.path.join(os.path.dirname(tools.get_base_dir()), 'datasets')
+    experiments_folder = os.path.join(tools.get_base_dir(), 'experiments')
     random_seed = None  # An integer number, or None in order not to set the random seed.
     tf_log_level = 'ERROR'
     buffer_size = 1000 # For shuffling data.

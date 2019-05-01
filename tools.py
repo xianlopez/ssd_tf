@@ -19,8 +19,8 @@ import Resizer
 # ----------------------------------------------------------------------------------------------------------------------
 base_dir = None
 def get_base_dir():
+    global base_dir
     if base_dir is None:
-        global base_dir
         base_dir = os.path.dirname(os.path.abspath(__file__))
         return base_dir
     else:

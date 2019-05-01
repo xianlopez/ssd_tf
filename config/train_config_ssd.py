@@ -1,6 +1,8 @@
 from config.train_config_base import TrainConfiguration
 from DataAugmentation import DataAugOpts
 from LRScheduler import LRPolicies, LRSchedulerOpts
+import tools
+import os
 
 
 class UpdateTrainConfiguration(TrainConfiguration):
@@ -23,7 +25,7 @@ class UpdateTrainConfiguration(TrainConfiguration):
     ##################################
     ######### INITIALIZATION #########
     initialization_mode = 'load-pretrained'  # 'load-pretrained', 'scratch'
-    weights_file = r'.\weights\vgg_16_for_ssd\vgg_16_for_ssd.ckpt'
+    weights_file = os.path.join(tools.get_base_dir(), 'weights', 'vgg_16_for_ssd', 'vgg_16_for_ssd.ckpt')
     modified_scopes = ['conv6', 'conv7', 'conv8', 'conv9', 'scale', 'mbox']
     # weights_file = r'C:\development\brainlab\experiments\2019\2019_01_07_46\model-1'
     # modified_scopes = []
