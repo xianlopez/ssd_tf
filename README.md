@@ -2,6 +2,22 @@
 
 Tensorflow framework to train SSD
 
+It is based on Python 3.6. You will need the following packages:
+* tensorflow-gpu==1.11
+* lxml
+* matplotlib==2.2.3
+* opencv-python
+
 Link to download dataset (VOC0712): https://drive.google.com/file/d/1TtO5FD2g2bmzfyyGsqp7fnNvZi_0Qp-2/view?usp=sharing
 
 Link to download weights (VGG16 weights adapted to start training SSD): https://drive.google.com/open?id=1d4S0aZT7WDoPkKkTANnQKaVFDVsxsw_j
+
+Since I couldn't find an easy and convenient way to automatically download these files, please do it by hand clicking on the links above. After this, extract them and put the weights in `weights/vgg16_for_ssd` and the dataset in `datasets/VOC0712`.
+
+To make a training from scratch (well, starting from the VGG-16 weights), copy the file `train_config_ssd.py` to the root and rename it to `train_config.py`. This can be done by executing the following command:
+
+``cp config/train_config_ssd.py train_config.py``
+
+To start training run
+
+``python main.py -r train``

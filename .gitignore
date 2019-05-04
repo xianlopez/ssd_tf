@@ -5,6 +5,7 @@ experiments/*
 protobufs/*
 tensorboard/*
 weights/*
+datasets/*
 
 .idea*
 
