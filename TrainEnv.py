@@ -16,6 +16,7 @@ import math
 import DataReader
 import re
 from LRScheduler import LRScheduler
+import sys
 
 
 class Checkpoint:
@@ -48,7 +49,6 @@ class TrainEnv:
         self.reader = None
         self.action = exec_mode  # 'train', 'evaluate', 'predict' or 'interactive'
         self.is_training = None
-        self.tensorboard_process = None
 
         self.nbatches_accum = args.nbatches_accum
         self.zero_ops = None
@@ -290,8 +290,6 @@ class TrainEnv:
                 best_val_metric = np.max(np.array(val_metrics, dtype=np.float32))
                 print('Best validation metric: ' + str(best_val_metric))
 
-        self.end_tensorboard()
-
         return best_val_metric
 
     def save_checkpoint(self, sess, validation_loss, epoch, checkpoints, outdir):
@@ -492,23 +490,21 @@ class TrainEnv:
 
 
     # ----------------------------------------------------------------------------------------------------------------------
-    def end_tensorboard(self):
-        print('end_tensorboard')
-        print(self.tensorboard_process)
-        print('pid: ' + str(self.tensorboard_process.pid))
-        if self.tensorboard_process is not None:
-            logging.info('Killing tensorboard')
-            self.tensorboard_process.kill()
-        return
-
-
-    # ----------------------------------------------------------------------------------------------------------------------
     def prepare_tensorboard(self, sess, args):
-        merged = tf.summary.merge_all(name='summary_merge_all')
+        merged = tf.summary.merge_all()
         summary_writer = tf.summary.FileWriter(os.path.join(args.outdir, 'tensorboard'), sess.graph)
-        # command = 'python /home/xian/venvs/ssd_tf/lib/python3.5/site-packages/tensorboard/main.py --logdir=' + os.path.join(args.outdir, 'tensorboard')
-        command = 'tensorboard --logdir=' + os.path.join(args.outdir, 'tensorboard')
-        self.tensorboard_process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
+        if os.name == 'nt':  # Windows
+            python_dir = os.path.dirname(sys.executable)
+            tensorboard_path = os.path.join(python_dir, 'Scripts', 'tensorboard')
+            command = tensorboard_path + ' --logdir=' + os.path.join(args.outdir, 'tensorboard')
+            subprocess.Popen(["start", "cmd", "/k", command], shell=True)
+        elif os.name == 'posix':  # Ubuntu
+            python_dir = os.path.dirname(sys.executable)
+            tensorboard_path = os.path.join(python_dir, 'tensorboard')
+            command = tensorboard_path + ' --logdir=' + os.path.join(args.outdir, 'tensorboard')
+            os.system('gnome-terminal -e "bash -c \'' + command + '\'; $SHELL"')
+        else:
+            raise Exception('Operative system name not recognized: ' + str(os.name))
         hostname = socket.gethostname()
         tensorboard_url = 'http://' + hostname + ':6006'
         return merged, summary_writer, tensorboard_url
