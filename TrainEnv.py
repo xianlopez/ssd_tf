@@ -182,7 +182,6 @@ class TrainEnv:
             val_losses = []
             best_val_metric = 0
             checkpoints = [] # This is a list of Checkpoint objects.
-            mean_run_time = None
 
             # Tensorboard:
             merged, summary_writer, tensorboard_url = self.prepare_tensorboard(sess, args)
@@ -214,13 +213,7 @@ class TrainEnv:
                                 _ = sess.run([self.train_step])
 
                         else:
-                            run_start = time.time()
                             _, loss, predictions, labels, summaryOut = sess.run([self.train_op, self.loss, self.predictions, self.labels, merged], {self.is_training: True})
-                            run_time = time.time() - run_start
-                            if mean_run_time is None:
-                                mean_run_time = run_time
-                            else:
-                                mean_run_time = float(mean_run_time * global_step + run_time) / float(global_step + 1)
 
                         if math.isnan(loss):
                             raise Exception("Loss is Not A Number")
@@ -244,10 +237,7 @@ class TrainEnv:
                         break
 
                     if step % args.nsteps_display == 0:
-                        if mean_run_time is None:
-                            logging.info('Step %i / %i, loss: %.2e' % (step, nbatches_train, loss))
-                        else:
-                            logging.info('Step %i / %i, loss: %.2e. Last exec time: %.2e s, mean: %.2e s.' % (step, nbatches_train, loss, run_time, mean_run_time))
+                        logging.info('Step %i / %i, loss: %.2e' % (step, nbatches_train, loss))
 
                 finepoch = time.time()
                 logging.debug('Epoch computed in %.2f s' % (finepoch - iniepoch))
