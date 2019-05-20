@@ -1,5 +1,7 @@
 # README #
 
+## UNDER CONSTRUCTION
+
 Tensorflow framework to train SSD
 
 It is based on Python 3.6. You will need the following packages:
@@ -21,3 +23,8 @@ To make a training from scratch (well, starting from the VGG-16 weights), copy t
 To start training run
 
 ``python main.py -r train``
+
+## To Do
+* Understand why with TensorFlow 1.13 the loss is more likely to diverge than with 1.11.
+* Show example of training.
+* Add other base networks and other resolutions.
