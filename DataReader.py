@@ -1,4 +1,3 @@
-# ======================================================================================================================
 import tensorflow as tf
 import tools
 import logging
@@ -22,63 +21,8 @@ def get_n_classes(args):
     return nclasses
 
 
-# ======================================================================================================================
-class InteractiveDataReader:
-
-    def __init__(self, batch_size, input_width, input_height, args):
-        self.batch_size = batch_size
-        self.input_width = input_width
-        self.input_height = input_height
-        self.preprocess_type = args.preprocess_opts.type
-        self.mean = args.preprocess_opts.mean
-        self.range_min = args.preprocess_opts.range_min
-        self.range_max = args.preprocess_opts.range_max
-        self.resize_method = args.resize_method
-        self.img_extension, self.classnames = tools.process_dataset_config(args.dataset_info_path)
-        if args.preprocess_opts.mean == 'vgg':
-            self.mean = [123.68, 116.78, 103.94]
-        else:
-            raise Exception('Preprocess mean not recognized.')
-
-    def build_inputs(self):
-        return tf.placeholder(dtype=tf.float32, shape=(self.batch_size, self.input_width, self.input_height, 3), name='inputs')
-
-    def get_batch(self, image_paths):
-        if len(image_paths) != self.batch_size:
-            raise Exception('Number of image paths different to batch size.')
-        inputs_numpy = np.zeros(shape=(self.batch_size, self.input_width, self.input_height, 3), dtype=np.float32)
-        for i in range(self.batch_size):
-            inputs_numpy[i, :, :, :] = self.get_image(image_paths[i])
-        return inputs_numpy
-
-    def preprocess_image(self, image):
-        # Subtract mean or fit to range:
-        if self.preprocess_type == 'subtract_mean':
-            means = np.zeros(shape=image.shape, dtype=np.float32)
-            for i in range(3):
-                means[:, :, i] = self.mean[i]
-            image = image - means
-        elif self.preprocess_type == 'fit_to_range':
-            image = self.range_min + image * (self.range_max - self.range_min) / 255.0
-        else:
-            raise Exception('Preprocess type not recognized.')
-        # Resize:
-        image = Resizer.ResizeNumpy(image, self.resize_method, self.input_width, self.input_height)
-        return image
-
-    def get_image(self, image_path):
-        # Read image:
-        image = cv2.imread(image_path)
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB).astype(np.float32)
-        # Preprocess it:
-        image = self.preprocess_image(image)
-        return image
-
-
-# ======================================================================================================================
 class TrainDataReader:
 
-    # ------------------------------------------------------------------------------------------------------------------
     def __init__(self, input_shape, args, network):
 
         self.network = network
@@ -119,7 +63,6 @@ class TrainDataReader:
             self.data_aug_func = data_augmenter.data_augmenter
         return
 
-    # ------------------------------------------------------------------------------------------------------------------
     def get_nbatches_per_epoch(self, split):
 
         if split == 'train':
@@ -129,7 +72,6 @@ class TrainDataReader:
         else:
             raise Exception('Split not recognized.')
 
-    # ------------------------------------------------------------------------------------------------------------------
     def get_init_op(self, split):
 
         if split == 'train':
@@ -139,7 +81,6 @@ class TrainDataReader:
         else:
             raise Exception('Split not recognized.')
 
-    # ------------------------------------------------------------------------------------------------------------------
     def build_iterator(self):
 
         self.read_count = 0
@@ -162,7 +103,6 @@ class TrainDataReader:
 
         return inputs, labels, filenames
 
-    # ------------------------------------------------------------------------------------------------------------------
     def build_batched_dataset(self, split):
 
         filenames = self.get_detection_filenames(split)
@@ -170,8 +110,6 @@ class TrainDataReader:
 
         return batched_dataset, len(filenames)
 
-
-    # ------------------------------------------------------------------------------------------------------------------
     def get_detection_filenames(self, split):
 
         if split != 'train' and split != 'val':
@@ -215,9 +153,7 @@ class TrainDataReader:
         assert len(filenamesnoext) % self.batch_size == 0, 'Number of images is not a multiple of batch size'
 
         return filenamesnoext
-    
 
-    # ------------------------------------------------------------------------------------------------------------------
     def build_detection_dataset(self, filenames, split):
         dataset = tf.data.Dataset.from_tensor_slices(filenames)
         dataset = dataset.map(self.parse_detection_w_all, num_parallel_calls=self.num_workers)
@@ -233,36 +169,26 @@ class TrainDataReader:
 
         return dataset.batch(self.batch_size)
 
-
-    # ------------------------------------------------------------------------------------------------------------------
     def encode_boxes(self, image, label, filename):
         (label) = tf.py_func(self.encode_boxes_np, [label], (tf.float32), name='encode_boxes_np')
         label.set_shape(self.network.encoded_gt_shape)
         return image, label, filename
 
-
-    # ------------------------------------------------------------------------------------------------------------------
     def resize_func_extended_detection(self, image, label, filename):
         image, label = self.resize_function(image, label)
         return image, label, filename
 
-
-    # ------------------------------------------------------------------------------------------------------------------
     def parse_detection_w_all(self, filename):
         (image, label) = tf.py_func(self.read_detection_image_w_ann_txt, [filename], (tf.float32, tf.float32), name='read_det_im_ann')
         label.set_shape((None, 5))  # (nboxes, [class_id, x_min, y_min, width, height])
         image.set_shape((None, None, 3))  # (height, width, channels)
         return image, label, filename
 
-
-    # ------------------------------------------------------------------------------------------------------------------
     def preprocess_w_all(self, image, label, filename):
         means = tf.reshape(tf.constant(VGG_MEAN), [1, 1, 3])
         image = image - means
         return image, label, filename
 
-
-    # ------------------------------------------------------------------------------------------------------------------
     def encode_boxes_np(self, boxes_array):
         # print('encode_boxes_np')
         nboxes = boxes_array.shape[0]
@@ -281,8 +207,6 @@ class TrainDataReader:
         # print('encode_boxes_np listo')
         return encoded_label
 
-
-    # ------------------------------------------------------------------------------------------------------------------
     def read_detection_image_w_ann_txt(self, filename):
         # print('read_detection_image_w_ann_txt')
         self.read_count += 1
@@ -367,7 +291,6 @@ class TrainDataReader:
         # print('read_detection_image_w_ann_txt listo')
         return image, bboxes_array
 
-
     def write_network_input_pyfunc(self, image, bboxes):
         img = image.copy()
         height = img.shape[0]
@@ -397,7 +320,6 @@ class TrainDataReader:
         cv2.imwrite(file_path_candidate, img)
         return image
 
-
     def write_network_input_func(self, image, bboxes, filename):
         shape = image.shape
         image = tf.py_func(self.write_network_input_pyfunc, [image, bboxes], tf.float32, name='write_network_input')
@@ -405,26 +327,21 @@ class TrainDataReader:
         return image, bboxes, filename
 
 
-# ----------------------------------------------------------------------------------------------------------------------
 def parse_jpg(filepath):
     img = tf.read_file(filepath, name='read_jpg')
     img = tf.image.decode_jpeg(img, channels=3, name='decode_jpg')
     img = tf.cast(img, tf.float32, name='cast_jpg2float32')
-
     return img
 
 
-# ----------------------------------------------------------------------------------------------------------------------
 def parse_png(filepath):
 
     img = tf.read_file(filepath, name='read_png')
     img = tf.image.decode_png(img, channels=3, name='decode_png')
     img = tf.cast(img, tf.float32, name='cast_png2float32')
-
     return img
 
 
-# ----------------------------------------------------------------------------------------------------------------------
 # This is done to avoid memory problems.
 def ensure_max_size(image, max_size):
 

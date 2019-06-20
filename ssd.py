@@ -46,7 +46,6 @@ class ssd_net:
         print('Number of feature maps: ' + str(len(self.feature_maps)))
         self.nboxes = 0
         for feat_map in self.feature_maps:
-            print(feat_map.nboxes)
             self.nboxes += feat_map.nboxes
         self.encoded_gt_shape = (self.nboxes, 6)
         print('Number of anchor boxes: ' + str(self.nboxes))
@@ -343,7 +342,6 @@ class ssd_net:
         net = inputs # (batch_size, grid_size, grid_size, nchannels)
         # Normalize:
         if 'conv4' in layer_name:
-            print('normalizing in ssd_multibox_layer')
             net = l2_normalization(net)
         # Location.
         num_loc_pred = nanchors * 4

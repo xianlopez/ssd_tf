@@ -1,20 +1,23 @@
 import numpy as np
 import cv2
 import tools
-import TrainEnv
-from predict_config import UpdatePredictConfiguration
+import InteractiveEnv
+import os
+from config.interactive_config_base import InteractiveConfiguration
+from ssd import SSDConfig
 
 fps = 30
-videoPath = r'T:\Pel Xian\vid_2239.mp4'
-# videoPath = r'T:\Pel Xian\Alella_Cam7_personesicotxes_0053.avi'
+videoName = 'terminator.mp4'
+videoPath = os.path.join(tools.get_base_dir(), 'videos', videoName)
 
-args = UpdatePredictConfiguration()
+opts = InteractiveConfiguration()
+opts.weights_file = r'C:\development\ssd_tf\weights\ssd_training_2019_01_10\model-240'
 
-assert args.batch_size == 1, 'Batch size must be 1'
+ssd_config = SSDConfig()
 
-net = TrainEnv.TrainEnv(args, 'interactive')
+net = InteractiveEnv.InteractiveEnv(opts, ssd_config)
 
-net.start_interactive_session(args)
+net.start_interactive_session()
 
 cap = cv2.VideoCapture(videoPath)
 
@@ -23,20 +26,16 @@ while True:
     ret, frame = cap.read()
     if not ret:
         break
+
     # Preprocess and batch:
     frame_prep = net.reader.preprocess_image(frame)
     batch = np.expand_dims(frame_prep, axis=0)
 
     # Forward:
-    predictions = net.forward_batch(batch, args)
-
-    # print('predictions')
-    # print(len(predictions))
-    # print(predictions)
+    predictions = net.forward_batch(batch)
 
     # Plot result:
     orig_height, orig_width, _ = frame.shape
-    # results = tools.convert_boxes_to_original_size(predictions[0], orig_width, orig_height, net.input_shape[0], net.input_shape[1])
     results = predictions[0]
     tools.draw_result(frame, results, net.classnames, None)
     cv2.imshow('result', frame)

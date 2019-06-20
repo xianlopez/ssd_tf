@@ -6,6 +6,7 @@ protobufs/*
 tensorboard/*
 weights/*
 datasets/*
+videos
 
 .idea*
 
