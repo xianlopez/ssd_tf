@@ -8,7 +8,6 @@ import numpy as np
 import cv2
 from lxml import etree
 import tensorflow as tf
-import scipy.misc
 import matplotlib
 matplotlib.use('Agg')  # To avoid exception 'async handler deleted by the wrong thread'
 from matplotlib import pyplot as plt
@@ -379,51 +378,6 @@ def get_config_proto(gpu_memory_fraction):
     else:
         gpu_options = tf.GPUOptions()
     return tf.ConfigProto(gpu_options=gpu_options)
-
-
-# ----------------------------------------------------------------------------------------------------------------------
-def save_input_images(names, images, args, epoch_num, batch_num, img_extension, labels=None):
-    input_imgs_dir = os.path.join(args.outdir, 'input_images')
-    if not os.path.exists(input_imgs_dir):
-        os.makedirs(input_imgs_dir)
-    epoch_dir = os.path.join(input_imgs_dir, 'epoch_'+str(epoch_num))
-    if not os.path.exists(epoch_dir):
-        os.makedirs(epoch_dir)
-    batch_dir = os.path.join(epoch_dir, 'batch_'+str(batch_num))
-    if not os.path.exists(batch_dir):
-        os.makedirs(batch_dir)
-    for i in range(len(names)):
-        filename = names[i].decode(sys.getdefaultencoding())
-        # Remove drive:
-        if ':' in filename:
-            _, filename = os.path.split(filename)
-        # Split subfolders:
-        subfolders = filename.split(os.sep)
-        img_folder = batch_dir
-        for j in range(len(subfolders) - 1):
-            img_folder = os.path.join(img_folder, subfolders[j])
-            if not os.path.exists(img_folder):
-                os.makedirs(img_folder)
-        # Final name and path:
-        filename = subfolders[len(subfolders) - 1]
-        img_path = os.path.join(img_folder, filename)
-        # print(img_path)
-        if img_path[len(img_path)-4:] != img_extension:
-            img_path = img_path + img_extension
-        image_to_write = images[i]
-        max_value = np.max(image_to_write)
-        if labels is not None:
-            for box in labels[i]:
-                x0 = int(box.x0)
-                y0 = int(box.y0)
-                x1 = min(x0 + int(box.width), image_to_write.shape[1]-1)
-                y1 = min(y0 + int(box.height), image_to_write.shape[0]-1)
-                image_to_write[y0, x0:x1, 0] = max_value
-                image_to_write[y1, x0:x1, 0] = max_value
-                image_to_write[y0:y1, x0, 0] = max_value
-                image_to_write[y0:y1, x1, 0] = max_value
-        scipy.misc.imsave(img_path, image_to_write)
-    return
 
 
 # ----------------------------------------------------------------------------------------------------------------------

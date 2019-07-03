@@ -4,8 +4,8 @@
 
 Tensorflow framework to train SSD
 
-It is based on Python 3.6. You will need the following packages:
-* tensorflow-gpu==1.11
+It is based on Python 3.5. You will need the following packages:
+* tensorflow-gpu==1.11.0
 * lxml
 * matplotlib==2.2.3
 * opencv-python
